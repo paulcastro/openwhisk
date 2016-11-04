@@ -209,33 +209,45 @@ class Invoker(
         }
     }
 
+<<<<<<< fc00d75c8fef27504e4c4b922bd9ee39c4373d7d
     /**
      * Runs the action in the container if the initialization succeeded and returns a triple
      * (initialization failed?, the container, the init result if initialization failed else the run result)
      */
     private def runAction(tran: Transaction, action: WhiskAction, con: WhiskContainer, initResultOpt: Option[RunResult])(
         implicit transid: TransactionId): (Boolean, WhiskContainer, RunResult) = {
-        def run() = {
-            val msg = tran.msg
-            val auth = msg.authkey
-            val payload = msg.content getOrElse JsObject()
-            val boundParams = action.parameters.toJsObject
-            val params = JsObject(boundParams.fields ++ payload.fields)
-            val timeout = action.limits.timeout.duration
-            con.run(params, msg.meta, auth.compact, timeout, action.fullyQualifiedName, msg.activationId.toString)
-        }
 
-        initResultOpt match {
-            // cached container
-            case None => (false, con, run())
+                // temporary code to deprecate swift
+        if (action.exec.kind == Exec.SWIFT) {
+            info(this, s"send deprecate Swift alert")
+                val response = ActivationResponse.whiskError("Swift 2 has been deprecated, please update to Swift 3.")
+                val interval = computeActivationInterval(tran)
+                val activation = makeWhiskActivation(msg, EntityPath(action.docid.id), action.version, response, interval, Some(action.limits))
+                completeTransaction(tran, activation, FailedActivation(transid))
 
-            // new container
-            case Some(RunResult(interval, response)) =>
-                tran.initInterval = Some(interval)
-                response match {
-                    case Some((200, _)) => (false, con, run()) // successful init
-                    case _              => (true, con, initResultOpt.get) // unsuccessful initialization
-                }
+        }  else {
+            def run() = {
+                val msg = tran.msg
+                val auth = msg.authkey
+                val payload = msg.content getOrElse JsObject()
+                val boundParams = action.parameters.toJsObject
+                val params = JsObject(boundParams.fields ++ payload.fields)
+                val timeout = action.limits.timeout.duration
+                con.run(params, msg.meta, auth.compact, timeout, action.fullyQualifiedName, msg.activationId.toString)
+            }
+
+            initResultOpt match {
+                // cached container
+                case None => (false, con, run())
+
+                // new container
+                case Some(RunResult(interval, response)) =>
+                    tran.initInterval = Some(interval)
+                    response match {
+                        case Some((200, _)) => (false, con, run()) // successful init
+                        case _              => (true, con, initResultOpt.get) // unsuccessful initialization
+                    }
+            }   
         }
     }
 
@@ -258,9 +270,10 @@ class Invoker(
         producer.send("completed", completeMsg) map { status =>
             info(this, s"posted completion of activation ${msg.activationId}")
         }
+        
+       activationResult
+    }   
 
-        activationResult
-    }
 
     // The nodeJsAction runner inserts this line in the logs at the end
     // of each activation

@@ -194,12 +194,15 @@ protected[core] object Exec
                     }
                     SequenceExec(Pipecode.code, comp)
 
-                case Exec.SWIFT | Exec.SWIFT3 =>
+                case Exec.SWIFT3 =>
                     val code: String = obj.getFields("code") match {
                         case Seq(JsString(c)) => c
                         case _                => throw new DeserializationException(s"'code' must be a string defined in 'exec' for '$kind' actions")
                     }
                     if (kind == Exec.SWIFT) SwiftExec(code) else Swift3Exec(code)
+                
+                case Exec.SWIFT =>
+                    throw new DeserializationException(s"Swift 2 has been deprecated, please update to Swift 3")
 
                 case Exec.JAVA =>
                     val jar: Attachment[String] = obj.fields.get("jar").map { f =>
