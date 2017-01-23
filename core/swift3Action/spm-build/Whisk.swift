@@ -112,8 +112,6 @@ class Whisk {
     private class func post(uriPath: String, params : [String:Any], group: DispatchGroup, callback : @escaping([String:Any]) -> Void) {
         let communicationDetails = initializeCommunication()
         
-        print("Whisk.post: communication details \(communicationDetails)")
-        
         let loginData: Data = communicationDetails.authKey.data(using: String.Encoding.utf8, allowLossyConversion: false)!
         let base64EncodedAuthKey  = loginData.base64EncodedString(options: NSData.Base64EncodingOptions(rawValue: 0))
         
@@ -211,7 +209,6 @@ class Whisk {
                         group.leave()
                     }
                     
-                    print("Got response")
                     if let error = error {
                         callback(["error":error.localizedDescription])
                     } else {
