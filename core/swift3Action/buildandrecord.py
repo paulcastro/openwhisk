@@ -48,10 +48,10 @@ for instruction in buildInstructions:
 
 ## if found, create build script, otherwise exit with error
 if compileCommand != None and linkCommand != None:
-    print "Generated OpenWhisk Compile command: %s" % compileCommand
-    print "========="
-    print "Generated OpenWhisk Link command: %s" % linkCommand
-
+    #print "Generated OpenWhisk Compile command: %s" % compileCommand
+    #print "========="
+    #print "Generated OpenWhisk Link command: %s" % linkCommand
+    print "Succes, command and link commands found."
     with open(GENERATED_BUILD_SCRIPT, "a") as buildScript:
       buildScript.write("#!/bin/bash\n")
       buildScript.write("echo \"Compiling\"\n")

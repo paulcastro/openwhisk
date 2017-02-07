@@ -20,8 +20,8 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
 import ActionContainer.withContainer
-import spray.json.JsObject
-import spray.json.JsString
+import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 import common.WskActorSystem
 
@@ -31,6 +31,8 @@ class SwiftActionContainerTests extends BasicActionRunnerTests with WskActorSyst
     // note: "out" will likely not be empty in some swift build as the compiler
     // prints status messages and there doesn't seem to be a way to quiet them
     val enforceEmptyOutputStream = true
+    val enforceEmptyErrorStream = true
+
     lazy val swiftContainerImageName = "swiftaction"
     lazy val envCode = makeEnvCode("NSProcessInfo.processInfo()")
 
@@ -65,6 +67,16 @@ class SwiftActionContainerTests extends BasicActionRunnerTests with WskActorSyst
          |}
          """).stripMargin
 
+    lazy val echoCode = """
+         |func main(args: [String: Any]) -> [String: Any] {
+         |     let stderr = NSFileHandle.fileHandleWithStandardError()
+         |     print("hello stdout")
+         |
+         |     stderr.writeData("hello stderr".dataUsingEncoding(NSUTF8StringEncoding)!)
+         |     return args
+         |}
+         """.stripMargin
+
     lazy val errorCode = """
                 | // You need an indirection, or swiftc detects the div/0
                 | // at compile-time. Smart.
@@ -81,6 +93,23 @@ class SwiftActionContainerTests extends BasicActionRunnerTests with WskActorSyst
         withContainer(swiftContainerImageName, env)(code)
     }
 
+    def fixture =
+    new {
+      val (out, err) = withActionContainer() { c =>
+        val code = errorCode
+
+        val (initCode, _) = c.init(initPayload(code))
+        initCode should be(200)
+
+        val (runCode, runRes) = c.run(runPayload(JsObject()))
+        runCode should be(502)
+
+        runRes shouldBe defined
+        runRes.get.fields.get("error") shouldBe defined
+
+      }
+    }
+
     behavior of swiftContainerImageName
 
     // remove this test: it will not even compile under Swift 3 anymore
@@ -93,36 +122,6 @@ class SwiftActionContainerTests extends BasicActionRunnerTests with WskActorSyst
         |}
         """.stripMargin)
     */
-    testEcho(Seq {
-        ("swift", """
-         |import Glibc
-         |func main(args: [String: Any]) -> [String: Any] {
-         |     print("hello stdout")
-         |     fputs("hello stderr", stderr)
-         |     return args
-         |}
-         """.stripMargin)
-    })
-
-    testEnv(Seq {
-        ("swift", envCode)
-    }, enforceEmptyOutputStream)
-
-    it should "support actions using non-default entry points" in {
-        withActionContainer() { c =>
-            val code = """
-                | func niam(args: [String: Any]) -> [String: Any] {
-                |   return [ "result": "it works" ]
-                | }
-                |""".stripMargin
-
-            val (initCode, initRes) = c.init(initPayload(code, main = "niam"))
-            initCode should be(200)
-
-            val (_, runRes) = c.run(runPayload(JsObject()))
-            runRes.get.fields.get("result") shouldBe Some(JsString("it works"))
-        }
-    }
 
     it should "return some error on action error" in {
         val (out, err) = withActionContainer() { c =>
@@ -144,6 +143,28 @@ class SwiftActionContainerTests extends BasicActionRunnerTests with WskActorSyst
                 e shouldBe empty
         })
     }
+
+    testEcho(Seq {
+        ("swift", echoCode)
+    })
+
+
+    it should "support actions using non-default entry points" in {
+        withActionContainer() { c =>
+            val code = """
+                | func niam(args: [String: Any]) -> [String: Any] {
+                |   return [ "result": "it works" ]
+                | }
+                |""".stripMargin
+
+            val (initCode, initRes) = c.init(initPayload(code, main = "niam"))
+            initCode should be(200)
+
+            val (_, runRes) = c.run(runPayload(JsObject()))
+            runRes.get.fields.get("result") shouldBe Some(JsString("it works"))
+        }
+    }
+
 
     it should "log compilation errors" in {
         val (out, err) = withActionContainer() { c =>
@@ -190,4 +211,37 @@ class SwiftActionContainerTests extends BasicActionRunnerTests with WskActorSyst
                 e shouldBe empty
         })
     }
+
+    it should s"run a swift script and confirm expected environment variables" in {
+                val props = Seq(
+                    "api_host" -> "xyz",
+                    "api_key" -> "abc",
+                    "namespace" -> "zzz",
+                    "action_name" -> "xxx",
+                    "activation_id" -> "iii",
+                    "deadline" -> "123")
+                val env = props.map { case (k, v) => s"__OW_${k.toUpperCase()}" -> v }
+
+                val (out, err) = withActionContainer(env.take(1).toMap) { c =>
+                    val (initCode, _) = c.init(initPayload(envCode))
+                    initCode should be(200)
+
+                    val (runCode, out) = c.run(runPayload(JsObject(), Some(props.toMap.toJson.asJsObject)))
+                    runCode should be(200)
+                    out shouldBe defined
+                    props.map {
+                        case (k, v) => withClue(k) {
+                            out.get.fields(k) shouldBe JsString(v)
+                        }
+
+                    }
+                }
+
+                checkStreams(out, err, {
+                    case (o, e) =>
+                        if (enforceEmptyOutputStream) o shouldBe empty
+                        if (enforceEmptyErrorStream) e shouldBe empty
+                })
+    }
+
 }

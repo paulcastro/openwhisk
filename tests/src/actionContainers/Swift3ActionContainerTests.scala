@@ -40,6 +40,16 @@ class Swift3ActionContainerTests extends SwiftActionContainerTests {
                 | }
             """.stripMargin
 
+    override lazy val echoCode = """
+         |func main(args: [String: Any]) -> [String: Any] {
+         |     let stderr = FileHandle.standardError
+         |     print("hello stdout")
+         |
+         |      stderr.write("hello stderr".data(using: String.Encoding.utf8)!)
+         |     return args
+         |}
+         """.stripMargin
+
     it should "properly use KituraNet and Dispatch" in {
         val (out, err) = withActionContainer() { c =>
             val code = """
@@ -136,4 +146,5 @@ class Swift3ActionContainerTests extends SwiftActionContainerTests {
                 e shouldBe empty
         })
     }
+
 }
