@@ -15,6 +15,7 @@
 #
 
 import os
+import glob
 import sys
 import subprocess
 import codecs
@@ -22,6 +23,7 @@ import json
 sys.path.append('../actionProxy')
 from actionproxy import ActionRunner, main, setRunner
 
+SWIFTDIR = '/swift3Action'
 SRC_EPILOGUE_FILE = './epilogue.swift'
 DEST_SCRIPT_FILE = '/swift3Action/spm-build/main.swift'
 DEST_SCRIPT_DIR = '/swift3Action/spm-build'
@@ -43,11 +45,22 @@ class Swift3Runner(ActionRunner):
             main_function = init_message['main']
         else:
             main_function = 'main'
-
+        
+        #make sure there is a main.swift file
+        open(DEST_SCRIPT_FILE, 'a').close()
+        
         with codecs.open(DEST_SCRIPT_FILE, 'a', 'utf-8') as fp:
+            os.chdir(DEST_SCRIPT_DIR)
+            for file in glob.glob("*.swift"):
+                if file != "Package.swift" and file != "main.swift":
+                    with codecs.open(file, 'r', 'utf-8') as f:
+                        fp.write(f.read())
+            os.chdir(SWIFTDIR)
             with codecs.open(SRC_EPILOGUE_FILE, 'r', 'utf-8') as ep:
                 fp.write(ep.read())
             fp.write('_run_main(mainFunction: %s)\n' % main_function)
+
+
 
     def build(self, init_message):
         # short circuit the build, if there already exists a binary
