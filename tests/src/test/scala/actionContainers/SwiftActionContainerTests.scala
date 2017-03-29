@@ -290,12 +290,22 @@ class SwiftActionContainerTests extends BasicActionRunnerTests with WskActorSyst
         })
     }
 
+    // SpeetToTextV1 is missing from current Watson SDK
     it should "make Watson SDKs available to action authors" in {
         val (out, err) = withActionContainer() { c =>
             val code = """
-                | import RestKit
-                | import WeatherCompanyData
-                | import AlchemyVision
+                | import AlchemyDataNewsV1
+                | import ConversationV1
+                | import DiscoveryV1
+                | import DocumentConversionV1
+                | import NaturalLanguageClassifierV1
+                | import NaturalLanguageUnderstandingV1
+                | import PersonalityInsightsV3
+                | import RetrieveAndRankV1
+                | import TextToSpeechV1
+                | import ToneAnalyzerV3
+                | import TradeoffAnalyticsV1
+                | import VisualRecognitionV3
                 |
                 | func main(args: [String:Any]) -> [String:Any] {
                 |   return ["message": "I compiled and was able to import Watson SDKs"]

@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND noninteractive
 # Upgrade and install basic Python dependencies
 RUN apt-get -y purge \
  && apt-get -y update \
- && apt-get -y install --fix-missing python2.7 python-gevent python-flask \
+ && apt-get -y install --fix-missing python2.7 python-gevent python-flask emacs24 \
 \
 # Upgrade and install Swift dependencies
  && apt-get -y install --fix-missing build-essential curl wget libicu-dev \
@@ -32,9 +32,9 @@ RUN wget --no-verbose -O - https://swift.org/keys/all-keys.asc | gpg --import - 
     gpg --keyserver hkp://pool.sks-keyservers.net --refresh-keys Swift
 
 # Install Swift Ubuntu 14.04 Snapshot
-#https://swift.org/builds/swift-3.0.1-release/ubuntu1404/swift-3.0.1-RELEASE/swift-3.0.1-RELEASE-ubuntu14.04.tar.gz
+#https://swift.org/builds/swift-3.1-release/ubuntu1404/swift-3.1-RELEASE/swift-3.1-RELEASE-ubuntu14.04.tar.gz
 
-ENV SWIFT_VERSION 3.0.2
+ENV SWIFT_VERSION 3.1
 ENV SWIFT_RELEASE_TYPE RELEASE
 ENV SWIFT_PLATFORM ubuntu14.04
 
@@ -62,7 +62,7 @@ ADD spm-build /swift3Action/spm-build
 # Build kitura net
 RUN touch /swift3Action/spm-build/main.swift
 RUN python /swift3Action/buildandrecord.py; rm /swift3Action/spm-build/.build/release/Action
-#RUN cd /swift3Action/spm-build; swift build -c release; rm /swift3Action/spm-build/.build/release/Action
+#RUN cd /swift3Action/spm-build; swift build -v ; rm /swift3Action/spm-build/.build/release/Action
 ENV FLASK_PROXY_PORT 8080
 
 CMD ["/bin/bash", "-c", "cd swift3Action && python -u swift3runner.py"]
