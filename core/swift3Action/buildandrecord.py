@@ -68,7 +68,7 @@ if compileCommand is not None and linkCommand is not None:
         buildScript.write("echo \"Linking\"\n")
         buildScript.write("%s\n" % linkCommand)
         buildScript.write("else\n")
-        buildScript.write(">2& echo \"Action did not compile\"\n")
+        buildScript.write(">&2 echo \"Action did not compile\"\n")
         buildScript.write("exit 1\n")
         buildScript.write("fi")
 
