@@ -373,6 +373,13 @@ Swift 3.1.1 actions can use the following packages:
 - SwiftyJSON version 15.0.1, https://github.com/IBM-Swift/SwiftyJSON
 - Watson Developer Cloud SDK version 0.16.0, https://github.com/watson-developer-cloud/swift-sdk
 
+### Swift 4
+Swift 4 actions are experimental and support the Swift pre-release from 6-12-2017.  You may try this using `--kind swift:experimental`.
+
+Swift 4.0.0 actions use the following packages:
+- KituraNet version 1.7.7, https://github.com/IBM-Swift/Kitura-net
+- SwiftyJSON version 15.0.1, https://github.com/IBM-Swift/SwiftyJSON
+- Watson Developer Cloud SDK version 0.16.0, https://github.com/watson-developer-cloud/swift-sdk
 
 ## Docker actions
 

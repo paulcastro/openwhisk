@@ -35,6 +35,7 @@ class Swift3ActionContainerTests extends BasicActionRunnerTests with WskActorSys
     // prints status messages and there doesn't seem to be a way to quiet them
     val enforceEmptyOutputStream = false
     lazy val swiftContainerImageName = "swift3action"
+    lazy val helloSwiftZipName = "helloSwift.zip"
     lazy val envCode = makeEnvCode("ProcessInfo.processInfo")
 
     def makeEnvCode(processInfo: String) = ("""
@@ -248,7 +249,7 @@ class Swift3ActionContainerTests extends BasicActionRunnerTests with WskActorSys
     }
 
     it should "support pre-compiled binary in a zip file" in {
-        val zip = new File(TestUtils.getTestActionFilename(swiftBinaryName)).toPath
+        val zip = new File(TestUtils.getTestActionFilename(helloSwiftZipName)).toPath
         val code = ResourceHelpers.readAsBase64(zip)
 
         val (out, err) = withActionContainer() { c =>
