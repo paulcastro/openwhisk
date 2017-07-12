@@ -1,12 +1,11 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2016 IBM Corporation
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,13 +16,15 @@
 
 package actionContainers
 
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
-class Swift311ActionContainerTests extends Swift3ActionContainerTests {
-    override lazy val swiftContainerImageName = "action-swift-v3.1.1"
 
+@RunWith(classOf[JUnitRunner])
+class Swift4ActionContainerTests extends Swift3ActionContainerTests {
+    override lazy val swiftContainerImageName = "action-swift-v4.0.0"
+    override lazy val helloSwiftZipName = "helloSwift400.zip"
     override lazy val watsonCode = """
                 | import AlchemyDataNewsV1
                 | import ConversationV1
@@ -41,6 +42,4 @@ class Swift311ActionContainerTests extends Swift3ActionContainerTests {
                 |     return ["message": "I compiled and was able to import Watson SDKs"]
                 | }
             """.stripMargin
-            
-    override lazy val helloSwiftZipName = "helloSwift311.zip"
 }

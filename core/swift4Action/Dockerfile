@@ -1,0 +1,70 @@
+# Dockerfile for swift actions, overrides and extends ActionRunner from actionProxy
+# This Dockerfile is partially based on: https://github.com/swiftdocker/docker-swift/
+FROM buildpack-deps:trusty
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# Upgrade and install basic Python dependencies
+RUN apt-get -y purge \
+ && apt-get -y update \
+ && apt-get -y install --fix-missing python2.7 python-gevent python-flask \
+\
+# Upgrade and install Swift dependencies
+ && apt-get -y install --fix-missing build-essential curl wget clang libicu-dev \
+\
+# Install zip for compiling Swift actions
+ && apt-get -y install zip \
+\
+# Clean up
+ && apt-get clean
+
+ # Install clang manually, since SPM wants at least Clang 3-6
+RUN cd / &&\
+(curl -L -k http://llvm.org/releases/3.6.2/clang+llvm-3.6.2-x86_64-linux-gnu-ubuntu-14.04.tar.xz | tar xJ) &&\
+cp -r /clang+llvm-3.6.2-x86_64-linux-gnu-ubuntu-14.04/* /usr/ &&\
+rm -rf /clang+llvm-3.6.2-x86_64-linux-gnu-ubuntu-14.04
+
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++ 20
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang 20
+
+# Install Swift keys
+RUN wget --no-verbose -O - https://swift.org/keys/all-keys.asc | gpg --import - && \
+    gpg --keyserver hkp://pool.sks-keyservers.net --refresh-keys Swift
+
+# Install Swift Ubuntu 14.04 Snapshot
+#https://swift.org/builds/swift-4.0-development-snapshot-2017-07-12-a/ubuntu1404/swift-4.0-DEVELOPMENT-SNAPSHOT-2017-07-12-a/swift-4.0-DEVELOPMENT-SNAPSHOT-2017-07-12-a-ubuntu14.04.tar.gz
+
+#https://swift.org/builds/swift-4.0-branch/ubuntu1404/swift-4.0-DEVELOPMENT-SNAPSHOT-2017-07-13-a/swift-4.0-DEVELOPMENT-SNAPSHOT-2017-07-13-a-ubuntu14.04.tar.gz
+
+ENV SWIFT_VERSION 4.0
+ENV SWIFT_RELEASE_TYPE DEVELOPMENT-SNAPSHOT-2017-07-13-a
+ENV SWIFT_PLATFORM ubuntu14.04
+
+RUN SWIFT_ARCHIVE_NAME=swift-$SWIFT_VERSION-$SWIFT_RELEASE_TYPE-$SWIFT_PLATFORM && \
+    SWIFT_URL=https://swift.org/builds/swift-$SWIFT_VERSION-branch/$(echo "$SWIFT_PLATFORM" | tr -d .)/swift-$SWIFT_VERSION-$SWIFT_RELEASE_TYPE/$SWIFT_ARCHIVE_NAME.tar.gz && \
+    echo $SWIFT_URL && \
+    wget --no-verbose $SWIFT_URL && \
+    wget --no-verbose $SWIFT_URL.sig && \
+    gpg --verify $SWIFT_ARCHIVE_NAME.tar.gz.sig && \
+    tar -xzf $SWIFT_ARCHIVE_NAME.tar.gz --directory / --strip-components=1 && \
+    rm -rf $SWIFT_ARCHIVE_NAME* /tmp/* /var/tmp/*
+
+# Add the action proxy
+RUN mkdir -p /actionProxy
+ADD actionproxy.py /actionProxy
+
+# Add files needed to build and run action
+RUN mkdir -p /swift4Action
+ADD epilogue.swift /swift4Action
+ADD swift4runner.py /swift4Action
+ADD buildandrecord.py /swift4Action
+ADD spm-build /swift4Action/spm-build
+
+
+# Build kitura net
+RUN touch /swift4Action/spm-build/main.swift
+RUN python /swift4Action/buildandrecord.py; rm /swift4Action/spm-build/.build/release/Action
+#RUN cd /swift4Action/spm-build; swift build -c release; rm /swift4Action/spm-build/.build/release/Action
+ENV FLASK_PROXY_PORT 8080
+
+CMD ["/bin/bash", "-c", "cd /swift4Action && PYTHONIOENCODING='utf-8' python -u swift4runner.py"]

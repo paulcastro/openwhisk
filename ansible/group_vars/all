@@ -72,6 +72,10 @@ runtimesManifest:
       image:
         name: "action-swift-v3.1.1"
       deprecated: false
+    - kind: "swift:4.0.0"
+      image:
+        name: "action-swift-v4.0.0"
+      deprecated: false
     java:
     - kind: "java"
       default: true
